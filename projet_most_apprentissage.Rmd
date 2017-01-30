@@ -1,0 +1,595 @@
+---
+title: "Projet MOST"
+author: "Wassim Ben Youssef, Karim Assaad, Ahmed Hermi et Yoann Dacruz"
+date: "20 f?vrier 2016"
+output: html_document
+---
+
+Analyse des donn?es
+
+
+```{r, echo=FALSE}
+getwd()
+setwd("c:/Users/wassim/Desktop/MOST/projettitanic")
+train <- read.table("./train.csv",sep=",",header=TRUE, na.strings=c(""," ","NA"))
+
+test <- read.table("./test.csv",sep=",",header=TRUE, na.strings=c(""," ","NA"))
+
+nrow(train)
+
+test$Survived<-NA
+
+t<-rbind(train,test)
+
+
+plot(ecdf(t$Survived),main="Fonction de repartition", xlab="")
+plot(density(train$Survived),main="Fonction de densit?",xlab="")
+hist(train$Survived,main="Histogramme",xlab="")
+
+nb_survived<-length(t$Survived[train$Survived==1])
+nb_dead<-length(t$Survived[train$Survived==0])
+nb_survived
+nb_dead
+
+
+boxplot(t$Age,main="Box-plot de l'âge des passagers")
+boxplot(t$Fare,main="Box-plot sur le tarif payé par les passagers")
+
+hist(t$Pclass,breaks=seq(0,3,1), main="Histogramme indiquant le nombre de passagers par classes", xlab="")
+hist(t$SibSp, breaks=seq(0,8,.5), main="Histogramme pour le nombre de frères et soeurs ou conjoins", xlab="")
+hist(t$Parch, main="Histogramme pour le nombre de parents ou enfants", xlab="")
+View(train)
+
+#etude du poucentage de mort entre femme et homme
+
+plot(t$Sex)
+
+women_dead<-length(t$PassengerId[t$Survived==0 & t$Sex=="female"])
+men_dead<-length(t$PassengerId[t$Survived==0 & t$Sex=="male"])
+women_dead
+men_dead
+
+nb_women<-length(t$PassengerId[t$Sex=="female"])
+nb_men<-length(t$PassengerId[t$Sex=="male"])
+
+per_women_dead<-women_dead/nb_women
+per_men_dead<-men_dead/nb_men
+per_women_dead
+per_men_dead
+#80% des hommes sont morts
+#20% des femmes sont mortes
+
+prop.table(table(train$Sex, train$Survived),1)
+
+
+#etude du poucentage de mort par rapport a la class
+dead_class1<-length(t$PassengerId[t$Survived==0 & t$Pclass==1])
+dead_class2<-length(t$PassengerId[t$Survived==0 & t$Pclass==2])
+dead_class3<-length(t$PassengerId[t$Survived==0 & t$Pclass==3])
+dead_class1
+dead_class2
+dead_class3
+
+nb_class1<-length(t$PassengerId[t$Pclass==1])
+nb_class2<-length(t$PassengerId[t$Pclass==2])
+nb_class3<-length(t$PassengerId[t$Pclass==3])
+per_class1<-dead_class1/nb_class1
+per_class2<-dead_class2/nb_class2
+per_class3<-dead_class3/nb_class3
+per_class1
+per_class2
+per_class3
+
+#37% des gens en class 1 sont mort, 52% des gens en class 2 sont mort, 75% des gens en class 3 sont mort
+prop.table(table(train$Pclass, train$Survived),1)
+
+
+
+#regroupement de titre
+t$Name <- as.character(t$Name)
+
+t$Titre <- sapply(t$Name, FUN=function(x) {strsplit(x, split='[,.]')[[1]][2]})
+t$Titre <- sub(' ', '', t$Titre)
+
+table(t$Titre)
+
+
+
+t$Titre[t$Titre %in% c('Mme', 'Mlle')] <- 'Mlle'
+t$Titre[t$Titre %in% c('Capt', 'Don', 'Major', 'Sir')] <- 'Sir'
+t$Titre[t$Titre %in% c('Dona', 'Lady', 'the Countess', 'Jonkheer')] <- 'Lady'
+
+t$Titre <- factor(t$Titre)
+
+nb_titre<-nlevels(t$Titre)
+nb_titre
+
+View(t)
+#regroupe des famille
+t$Lastname <- sapply(t$Name, FUN=function(x) {strsplit(x, split='[,.]')[[1]][1]})
+
+  
+
+
+#family size
+t$FamilySize <- t$SibSp + t$Parch + 1
+
+#familyId
+t$FamilyID <- paste(as.character(t$FamilySize), t$Surname, sep="")
+t$FamilyID[t$FamilySize <= 2] <- 'Small'
+table(t$FamilyID)
+famIDs <- data.frame(table(t$FamilyID))
+famIDs <- famIDs[famIDs$Freq <= 2,]
+t$FamilyID[t$FamilyID %in% famIDs$Var1] <- 'Small'
+t$FamilyID <- factor(t$FamilyID)
+
+
+#unique(t$Lastname)
+
+
+
+
+#regroupement cabin
+Cab<-t$Cabin
+Cab<-substr(Cab,1,1)
+t<-cbind(t,Cab)
+
+
+#calcule des donnees manquantes
+#sur t
+nb_manquante<-sapply(t, function(x) sum(length(which(is.na(x)))))  
+nb_manquante
+
+
+#AIC ACM
+#install.packages("FactoMineR", dep=TRUE)
+
+#library(FactoMineR)
+aic2<-PCA(imputePCA(x))
+aic2$
+#install.packages("missMDA", dep=TRUE)
+library(missMDA)
+aic<-imputePCA(x)
+aic
+plot.PCA(aic)
+
+help(imputePCA)
+is.numeric(t$Parch)
+
+  x<-t$PassengerId+t$Survived+t$Pclass+t$Age+t$SibSp+t$Parch+t$Fare
+x<-na.omit(x)
+nrow(t)
+x<-matrix(c(t$PassengerId,t$Survived,t$Pclass,t$Age,t$SibSp,t$Parch,t$Fare),nrow=1309,ncol=7)
+head(x)
+
+heatmap(x)
+
+
+#separation de train et test
+train<-(t[1:nrow(train),])
+test<-t[(nrow(train)+1):(nrow(test)+nrow(train)),]
+
+#test$Survived[test$Sex == 'female'] <- 1
+
+
+
+```
+
+
+```{r echo=FALSE}
+#http://apiacoa.org/blog/2014/02/initiation-a-rpart.fr.html
+
+#cas1 supprimer les donnees manquante
+train1<-train
+test1<-test
+
+#train1[is.na(train1$Age)]
+
+train1<-na.omit(train1)
+test1<-na.omit(test1)
+manquante<-sapply(train1, function(x)sum(length(which(is.na(x)))))
+manquante
+
+
+
+#cas2 donner manquante avec la moyenne
+train2<-train
+test2<-test
+
+m<-mean(train2[,6],na.rm=TRUE)
+train2[,6][is.na(train2[,6])]<-m
+manquante<-sapply(train2, function(x)sum(length(which(is.na(x)))))
+manquante
+m<-mean(test2[,6],na.rm=TRUE)
+test2[,6][is.na(test2[,6])]<-m
+test2
+
+
+install.packages("GGally")
+
+
+
+#cas3 donnees manquantes avec arbre de decision
+install.packages("rpart", dep=TRUE)
+install.packages("tree", dep=TRUE)
+install.packages("party", dep=TRUE)
+install.packages("rattle", dep=TRUE)
+install.packages("rpart.plot", dep=TRUE)
+
+
+train3<-train
+test3<-test
+
+lapply(train3,class)
+lapply(test3,class)
+
+
+
+################################################## autre methode
+
+install.packages("tree")
+library(tree)
+cont<-tree.control(nobs=nrow(train),mincut = 20,minsize = 50)
+tree(Survived~.,data=train3,control=cont)
+
+
+#################################################
+
+
+
+install.packages("rattle")
+library(rpart)
+library(rattle)
+library(rpart.plot)
+library(RColorBrewer)
+
+####arbre de la variable a expliquer
+arbre<-rpart(Survived~., data=train3)
+
+#solution 1
+arbre <- rpart(Survived ~ Pclass + Sex + Age + SibSp + Parch + Fare + Embarked + Titre + FamilySize + FamilyID,data=train3, method="class")
+
+prp(arbre,extra=1)
+#############
+
+arbreOptimal<- prune(arbre,cp=arbre$cptable[which.min(arbre$cptable[,4]),1])
+prp(arbreOptimal,extra=1)
+
+##################################test
+n<-nrow(train)
+K<-16
+taille<-n%/%K
+set.seed(5)
+alea<-runif(n)
+rang<-rank(alea)
+bloc<-(rang-1)%/%taille+1
+bloc<-as.factor(bloc)
+print(summary(bloc))
+ls(train)
+
+
+for(k in 1:K){
+  arbre_age<-rpart(Age ~.,data=train[bloc==k,], method="anova")
+
+  pred<-predict(arbre_age, newdata = train[bloc==k,])
+  mc<-table(train$Survived,pred)
+  err  <- 1.0 - (mc[1,1]+mc[2,2])/sum(mc)
+  
+  all.err<-rbind(all.err,err)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+fit<-rpart(Age ~ .,data=t[!is.na(t$Age),], method="anova")
+
+
+
+tmp=rownames(fit$splits)
+allVars=colnames(attributes(fit$terms)$factors)  
+rownames(fit$splits)=1:nrow(fit$splits)
+splits=data.frame(fit$splits)
+splits$var=tmp
+splits$type=""
+frame=as.data.frame(fit$frame)
+index=0
+for(i in 1:nrow(frame)){
+  if(frame$var[i] != "<leaf>"){
+ index=index + 1
+ splits$type[index]="primary"
+ if(frame$ncompete[i] > 0){
+ for(j in 1:frame$ncompete[i]){
+ index=index + 1
+ splits$type[index]="competing"}}
+ if(frame$nsurrogate[i] > 0){
+ for(j in 1:frame$nsurrogate[i]){
+    index=index + 1
+    splits$type[index]="surrogate"}}}}
+splits$var=factor(as.character(splits$var))
+splits=subset(splits, type != "surrogate")
+out=aggregate(splits$improve,
+   list(Variable = splits$var),
+   sum, na.rm = TRUE)
+allVars=colnames(attributes(fit$terms)$factors)
+if(!all(allVars %in% out$Variable)){
+ missingVars=allVars[!(allVars %in% out$Variable)]
+ zeros=data.frame(x = rep(0, length(missingVars)), Variable = missingVars)
+ out=rbind(out, zeros)}
+out2=data.frame(Overall = out$x)
+rownames(out2)=out$Variable
+out2
+
+
+VI_T=out2
+barplot(unlist(VI_T/sum(VI_T)),names.arg=1:19)
+train$
+
+################################fin test
+
+###arbre de age
+
+arbre_age<-rpart(Age ~ Pclass + SibSp + Parch + Fare + Titre + FamilySize,data=t[!is.na(t$Age),], method="anova")
+prp(arbre_age, type=0)
+fancyRpartPlot(arbre_age)
+#prune pour modeliser
+
+plotcp(arbre_age)
+arbre_age$cptable[which.min(arbre_age$cptable[,4]),1]
+arbre_ageOptimal <- prune(arbre_age,cp=arbre_age$cptable[which.min(arbre_age$cptable[,4]),1])
+prp(arbre_ageOptimal,extra=1)
+
+pred<-predict(arbre_ageOptimal,t[is.na(t$Age),])
+t$Age[is.na(t$Age)]<-pred
+
+
+
+#les enfants
+t$Child <- 0
+t$Child[train$Age < 18] <- 1
+
+t$Old <- 0
+t$Old[train$Age > 55] <- 1
+
+
+##Fare
+arbre_fare<-rpart(Fare ~ Pclass + Sex + SibSp + Parch + Age + Embarked + Titre + FamilySize,data=t[!is.na(t$Fare),], method="anova")
+prp(arbre_fare, type=0)
+fancyRpartPlot(arbre_fare)
+#prune pour modeliser
+
+plotcp(arbre_fare)
+arbre_fare$cptable[which.min(arbre_fare$cptable[,4]),1]
+arbre_fareOptimal <- prune(arbre_fare,cp=arbre_fare$cptable[which.min(arbre_fare$cptable[,4]),1])
+prp(arbre_fareOptimal,extra=1)
+
+pred<-predict(arbre_fareOptimal,t[is.na(t$Fare),])
+t$Fare[is.na(t$Fare)]<-pred
+
+
+###Cab
+arbre_cab<-rpart(Cab ~ Pclass + Sex + SibSp + Parch + Fare + Age + Titre + FamilySize,data=t[!is.na(t$Cab),], method="class")
+prp(arbre_cab, type=0)
+fancyRpartPlot(arbre_cab)
+#prune pour modeliser
+
+plotcp(arbre_cab)
+arbre_cab$cptable[which.min(arbre_cab$cptable[,4]),1]
+arbre_cabOptimal <-prune(arbre_cab,cp=arbre_cab$cptable[which.min(arbre_cab$cptable[,4]),1])
+prp(arbre_cabOptimal,extra=1)
+
+pred<-predict(arbre_cabOptimal,t[is.na(t$Cab),], type="class" )
+help(predict)
+t$Cab[is.na(t$Cab)]<-pred
+
+
+####Embarked
+arbre_embarked<-rpart(Embarked ~ Pclass + Sex + SibSp + Parch + Fare + Age + Titre + FamilySize,data=t[!is.na(t$Embarked),], method="class")
+prp(arbre_embarked, type=0)
+fancyRpartPlot(arbre_embarked)
+#prune pour modeliser
+
+plotcp(arbre_embarked)
+arbre_embarked$cptable[which.min(arbre_embarked$cptable[,4]),1]
+arbre_embarkedOptimal <-prune(arbre_embarked,cp=arbre_embarked$cptable[which.min(arbre_embarked$cptable[,4]),1])
+prp(arbre_embarkedOptimal,extra=1)
+
+pred<-predict(arbre_embarkedOptimal,t[is.na(t$Embarked),], type="class")
+help(predict)
+t$Embarked[is.na(t$Embarked)]<-pred
+
+
+train4<-(t[1:nrow(train),])
+test4<-t[(nrow(train)+1):(nrow(test)+nrow(train)),]
+
+####Meilleur choix entre train1, train2 et train3
+
+
+train<-train4
+test<-test4
+train3<-NULL
+test3<-NULL
+train1<-NULL
+train2<-NULL
+train3<-NULL
+
+
+
+#Corr?lations
+train.sanssurvived <- train
+train.sanssurvived$Survived <- NULL
+
+are.factor<-sapply(train.sanssurvived, is.factor)
+are.factor
+heatmap(abs(cor(train.sanssurvived[ ,!are.factor])))
+
+
+
+
+
+
+
+decision_cabin<-rpart()
+######################  to be continued
+library(leaps)
+ls(train4)
+regsubsets((x=train4, weights=NULL, nbest=1, nvmax=8, force.in=NULL,force.out=NULL, intercept=TRUE, method=c("exhaustive", "backward","forward", "seqrep") ,really.big=FALSE))
+
+
+######################33
+```
+
+
+```{r echo=FALSE}
+
+#svm
+#install.packages("e1071", dep=TRUE)
+
+library(e1071)
+model.svm<-svm(factor(Survived)~Age+Sex,data=train,type='C',kernel='linear')
+model.svm
+p<-predict(model.svm,newdata = test)
+p
+help(svm)
+
+
+
+
+
+#random forest
+#install.packages("randomForest", dep=TRUE)
+
+t$FamilyID2 <- t$FamilyID
+t$FamilyID2 <- as.character(t$FamilyID2)
+t$FamilyID2[t$FamilySize <= 3] <- 'Small'
+t$FamilyID2 <- factor(t$FamilyID2)
+
+
+
+train<-(t[1:nrow(train),])
+test<-t[(nrow(train)+1):(nrow(test)+nrow(train)),]
+
+
+set.seed(415)
+
+library(randomForest)
+extractFeatures <- function(data) {
+  features <- c("Pclass","Age","Child","Sex","Parch","SibSp","Fare","Embarked","Titre","FamilySize","FamilyID2")
+  fea <- data[,features]
+  #fea$Age[is.na(fea$Age)] <- -1
+  #fea$Fare[is.na(fea$Fare)] <- median(fea$Fare, na.rm=TRUE)
+  fea$Embarked[is.na(fea$Embarked)] = "S"
+  fea$Sex      <- as.factor(fea$Sex)
+  fea$Embarked <- as.factor(fea$Embarked)
+  return(fea)
+}
+ls(train)
+
+
+rf <- randomForest(extractFeatures(train), as.factor(train$Survived), importance=TRUE, ntree=2000)
+
+rf$confusion
+rf$importance
+
+op <- par(mfrow = c(1,1))
+m <- rf$importance
+n <- dim(train)[1]
+for (i in 1:16) {
+  plot(train[,i],
+       type = "h", lwd=3, col='blue', axes=F,
+       ylab='', xlab='Variables',
+       main = colnames(rf$importance)[i] )
+  axis(2)
+  axis(1, at=1:n, labels=rownames(train))
+  # Je mets les deux valeurs les plus élevées en rouge
+  a <- order(train[,i], decreasing=T)
+  m2 <- train[,i]
+  m2[ -a[1:2] ] <- NA
+  lines(m2, type='h', lwd=5, col='red')
+}
+par(op)
+
+
+sur<-predict(rf, extractFeatures(test))
+sur
+
+
+imp <- importance(rf, type=1)
+featureImportance <- data.frame(Feature=row.names(imp), Importance=imp[,1])
+
+library(ggplot2)
+p <- ggplot(featureImportance, aes(x=reorder(Feature, Importance), y=Importance)) +
+     geom_bar(stat="identity", fill="#53cfff") +
+     coord_flip() + 
+     theme_light(base_size=20) +
+     xlab("") +
+     ylab("Importance") + 
+     ggtitle("Random Forest Feature Importance\n") +
+     theme(plot.title=element_text(size=18))
+
+p
+
+varImpPlot(rf)
+
+
+s<-data.frame(PassengerId=names(sur),Survived=sur)
+s
+write.csv(s,file="kwy",row.names = F)
+
+
+
+library(party)
+train$Embarked[is.na(train$Embarked)] = "S"
+
+############################################test
+n<-nrow(train)
+K<-16
+taille<-n%/%K
+set.seed(5)
+alea<-runif(n)
+rang<-rank(alea)
+bloc<-(rang-1)%/%taille+1
+bloc<-as.factor(bloc)
+print(summary(bloc))
+ls(train)
+
+
+for(k in 1:K){
+  fit <- cforest(as.factor(Survived) ~ .,data = train[bloc==k,], controls=cforest_unbiased(ntree=2000, mtry=3))
+
+  pred<-predict(fit, newdata = train[bloc==k,], OOB=TRUE, type = "response")
+  mc<-table(train$Survived,pred)
+  err  <- 1.0 - (mc[1,1]+mc[2,2])/sum(mc)
+  
+  all.err<-rbind(all.err,err)
+}
+#############################################
+
+
+
+set.seed(415)
+fit <- cforest(as.factor(Survived) ~ Pclass + Sex + Child + SibSp + Fare + Embarked + Titre + FamilySize + FamilyID2,data = train, controls=cforest_unbiased(ntree=2000, mtry=4))
+
+help(cforest)
+varimp(fit)
+varimpAUC(fit, mincriterion = 0, conditional = FALSE,threshold = 0.2, nperm = 1, OOB = TRUE)
+#d'apres le varimp j'ai constater que old et Parch sont pas utiliser donc je les eleimier de cforest et j'ai eu un meilleur score :D
+
+
+sur <- predict(fit, test, OOB=TRUE, type = "response")
+sur
+s <- data.frame(PassengerId = test$PassengerId, Survived = sur)
+
+write.csv(s,file="kwy4",row.names = F)
+
+
+
+```
